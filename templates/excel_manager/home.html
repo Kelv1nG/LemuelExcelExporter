@@ -1,0 +1,204 @@
+{% extends '../base.html' %}
+
+{% block content %}
+<div class="m-5">
+    <div class="my-10">
+        <h1>Instructions:</h1>
+        <p class="pl-5 my-3">1. Input Path -> location where your excel files are located</p>
+        <p class="pl-5 my-3">2. Output Path -> location where the summary will be stored afterwards</p>
+        <p class="pl-5 my-3">3. Target Cells / Values -> cells in excel file of interest and should be comma separated</p>
+        <p class="pl-12 my-3">e.g WELL NAME, WELL STATUS, WELL TYPE</p>
+        <p class="pl-12 my-3 text-red-500">note: this is case sensitive</p>
+    </div>
+    <div class="grid grid-cols-1">
+        <div class="flex justify-center items-stretch">
+            <div class="mb-3 xl:w-96">
+              <label for="input-path" class="form-label inline-block mb-2 text-gray-700"
+                >Input Path:</label
+              >
+              <input
+                type="text"
+                class="
+                  form-control
+                  block
+                  w-full
+                  px-3
+                  py-1.5
+                  text-base
+                  font-normal
+                  text-gray-700
+                  bg-white bg-clip-padding
+                  border border-solid border-gray-300
+                  rounded
+                  transition
+                  ease-in-out
+                  m-0
+                  focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none
+                "
+                id="input-path"
+                placeholder="Input Path/Directory"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-center">
+            <div class="mb-3 xl:w-96">
+              <label for="output-path" class="form-label inline-block mb-2 text-gray-700"
+                >Output Path:</label
+              >
+              <input
+                type="text"
+                class="
+                  form-control
+                  block
+                  w-full
+                  px-3
+                  py-1.5
+                  text-base
+                  font-normal
+                  text-gray-700
+                  bg-white bg-clip-padding
+                  border border-solid border-gray-300
+                  rounded
+                  transition
+                  ease-in-out
+                  m-0
+                  focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none
+                "
+                id="output-path"
+                placeholder="Output Path/Directory"
+              />
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div class="mb-3 xl:w-96">
+              <label for="target-values" class="form-label inline-block mb-2 text-gray-700"
+                >Target Cells / Values :</label
+              >
+              <input
+                type="text"
+                class="
+                  form-control
+                  block
+                  w-full
+                  px-3
+                  py-1.5
+                  text-base
+                  font-normal
+                  text-gray-700
+                  bg-white bg-clip-padding
+                  border border-solid border-gray-300
+                  rounded
+                  transition
+                  ease-in-out
+                  m-0
+                  focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none
+                "
+                id="target-values"
+                placeholder="e.g 'WELL NAME, WELL STATUS, 'SECTOR'"
+              />
+            </div>
+          </div>
+        <div class="flex justify-center">
+            <div class="m-5">
+                <button id="generate-summary" type="button" class="inline-block px-6 py-2.5 bg-purple-600 text-white font-medium text-xs leading-tight uppercase rounded shadow-md hover:bg-purple-700 hover:shadow-lg focus:bg-purple-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-purple-800 active:shadow-lg transition duration-150 ease-in-out">Generate Summary</button>
+            </div>
+        </div>
+        <div class="flex justify-center">
+          <div class="mb-3 xl:w-96">
+            <label for="exampleFormControlTextarea1" class="form-label inline-block mb-2 text-gray-700"
+              >Status:</label
+            >
+            <textarea disabled id="text-area"
+              class="
+                form-control
+                block
+                w-full
+                px-3
+                py-1.5
+                text-base
+                font-normal
+                text-gray-700
+                bg-white bg-clip-padding
+                border border-solid border-gray-300
+                rounded
+                transition
+                ease-in-out
+                m-0
+                focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none
+              "
+              id="exampleFormControlTextarea1"
+              rows="3"
+              placeholder="Display Message"
+            ></textarea>
+          </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block script %}
+<script>
+    let button = document.getElementById("generate-summary");
+    button.onclick = function () {
+        let inputPath = getInputPath();
+        let outputPath = getOutputPath();
+        let targetValues = getTargetValues();
+
+        let csrftoken = getCookie("csrftoken")
+        let rootMediaURL = "{{request.scheme}}://{{request.META.HTTP_HOST}}"
+        let url = rootMediaURL + '/summarize_files'
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken, // include csrf token from django function
+            },
+            body: JSON.stringify({
+                "inputPath": inputPath,
+                "outputPath": outputPath,
+                "targetValues": targetValues
+             })
+        })
+        .then(response => response.json())
+        .then(response => displayMessage(JSON.stringify(response)))
+    }
+
+    function getInputPath() {
+        let inputPath = document.getElementById('input-path');
+        return inputPath.value
+    }
+
+    function getOutputPath() {
+        let outputPath = document.getElementById('output-path');
+        return outputPath.value
+    }
+
+    function getTargetValues() {
+        let targetValues = document.getElementById('target-values');
+        return targetValues.value
+    }
+
+    function displayMessage(message) {
+      let textArea = document.getElementById('text-area')
+      textArea.value = message
+    }
+
+    /* from django official documentation on getting a cookie */
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock script %}
